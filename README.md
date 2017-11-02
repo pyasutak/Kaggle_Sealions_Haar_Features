@@ -6,3 +6,4 @@ Contest url: https://www.kaggle.com/c/noaa-fisheries-steller-sea-lion-population
 This repository is for a class project for the University of Bridgeport.
 
 Thanks to threeplusone for the Sea Lion Coordinates code repurposed in this repository!
+https://www.kaggle.com/threeplusone/sea-lion-coordinates
