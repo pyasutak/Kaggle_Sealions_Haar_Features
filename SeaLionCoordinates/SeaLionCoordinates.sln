@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27004.2005
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "SeaLionCoordinates", "SeaLionCoordinates\SeaLionCoordinates.pyproj", "{7D91FD69-BBD3-4C4D-ABAE-3063A890EA4F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7D91FD69-BBD3-4C4D-ABAE-3063A890EA4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D91FD69-BBD3-4C4D-ABAE-3063A890EA4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7ECE8FD4-C2FF-455D-B2FA-CB284B0288C6}
+	EndGlobalSection
+EndGlobal
