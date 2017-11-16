@@ -11,6 +11,7 @@ import operator
 import glob
 import csv 
 from math import sqrt
+import random
 
 import numpy as np
 
@@ -53,7 +54,7 @@ def package_versions():
     print('shapely       \t', shapely.__version__)
 
 
-SOURCEDIR = os.path.join('..', 'D:\\temp\\sealion\\withNegative')
+SOURCEDIR = os.path.join('..', 'D:\\temp\\sealion')
 
 DATADIR = os.path.join('..', 'D:\\temp\\sealion\\chunks')
 
@@ -254,7 +255,49 @@ class SeaLionData(object):
                     x = int(round(x))
                     y = int(round(y))
                     sealions.append( SeaLionCoord(train_id, cls, x, y) )
-                
+
+        numLions = len(sealions)
+
+        CHUNK_STEP = 120
+        CHUNK_SIZE = 92
+        max_x = src_img.shape[1]
+        max_y = src_img.shape[0]
+        #numxcoords = (max_x - CHUNK_STEP // 2) // CHUNK_STEP
+        #numycoords = (max_y - CHUNK_STEP // 2) // CHUNK_STEP
+        numxcoords = (max_x // CHUNK_STEP) - 1
+        numycoords = (max_y // CHUNK_STEP) - 1
+        negatives = []
+        for j in range(numycoords) :
+            for i in range(numxcoords) : 
+				
+                xcoord = i * CHUNK_STEP
+                ycoord = j * CHUNK_STEP
+                overlap = False
+                for tid, cls, x, y in sealions :
+                    if np.abs(x - xcoord) < CHUNK_STEP and np.abs(y - ycoord) < CHUNK_STEP : 
+                        overlap = True
+                        break
+                if overlap : continue
+
+                    #elif np.abs(lion.x - xcoord) < CHUNK_STEP or np.abs(lion.y - ycoord) < CHUNK_STEP : 
+                    #    print("check passed: new: [{xn},{yn}] lion: [{xl},{yl}] dist: [{xd},{yd}]".format(xn=xcoord,yn=ycoord,xl=lion.x,yl=lion.y,xd=np.abs(lion.x-xcoord),yd=np.abs(lion.y-ycoord)))
+                    #if (lion.x > xcoord and lion.x < xcoord + CHUNK_STEP) or (lion.y > ycoord and lion.y < ycoord + CHUNK_STEP): continue
+                   
+            #Add in good results; REMOVE BLACK MASK.
+                MIN_AVG_DATA = 200
+                neg_img = dot_img[ycoord:ycoord+CHUNK_SIZE,xcoord:xcoord+CHUNK_SIZE,:]
+                #neg_img = dot_img[xcoord:xcoord+CHUNK_SIZE,ycoord:ycoord+CHUNK_SIZE,:]
+                neg_avg = neg_img.sum() / (neg_img.shape[0] * neg_img.shape[1])
+                if neg_avg < MIN_AVG_DATA: continue
+
+                negatives.append( SeaLionCoord(train_id, 5, xcoord ,ycoord ) )
+		
+        #add in only one result for each sea lion
+        while len(negatives) > len(sealions):
+            del negatives[random.randint(0,len(negatives) - 1)]
+
+        sealions = sealions + negatives
+
         if self.verbosity >= VERBOSITY.VERBOSE :
             counts = [0,0,0,0,0,0]
             for c in sealions :
@@ -334,6 +377,6 @@ class SeaLionData(object):
 # Count sea lion dots and compare to truth from train.csv
 sld = SeaLionData()
 sld.verbosity = VERBOSITY.VERBOSE
-for tid in sld.trainshort_ids:
+for tid in sld.train_ids:
     coord = sld.coords(tid)
     sld.save_sea_lion_chunks(coord, 92)
