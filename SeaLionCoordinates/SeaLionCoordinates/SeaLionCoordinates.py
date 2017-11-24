@@ -256,6 +256,10 @@ class SeaLionData(object):
                     y = int(round(y))
                     sealions.append( SeaLionCoord(train_id, cls, x, y) )
 
+
+
+        # Start finding negative examples.
+
         numLions = len(sealions)
 
         CHUNK_STEP = 120
@@ -374,9 +378,9 @@ class SeaLionData(object):
 # end SeaLionData
 
 
-# Count sea lion dots and compare to truth from train.csv
+ #Count sea lion dots and compare to truth from train.csv
 sld = SeaLionData()
 sld.verbosity = VERBOSITY.VERBOSE
-for tid in sld.train_ids:
+for tid in sld.trainshort_ids:
     coord = sld.coords(tid)
     sld.save_sea_lion_chunks(coord, 92)
