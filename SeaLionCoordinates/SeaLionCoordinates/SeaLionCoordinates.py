@@ -21,10 +21,19 @@ from PIL import Image, ImageDraw, ImageFilter
 import skimage
 import skimage.io
 import skimage.measure
+import skimage.feature
+import skimage.morphology
 
 import shapely
 import shapely.geometry
 from shapely.geometry import Polygon
+
+from matplotlib import pyplot as plt
+from scipy import ndimage as ndi
+import scipy
+
+import cv2
+
 
 # Notes
 # cls -- sea lion class 
@@ -79,7 +88,8 @@ class SeaLionData(object):
             'adult_females',
             'juveniles',
             'pups',
-            'NOT_A_SEA_LION')
+            'NOT_A_SEA_LION'
+            )
             
         self.cls = namedtuple('ClassIndex', self.cls_names)(*range(0,6))
     
@@ -302,6 +312,9 @@ class SeaLionData(object):
 
         sealions = sealions + negatives
 
+        # End neg. examples.
+
+
         if self.verbosity >= VERBOSITY.VERBOSE :
             counts = [0,0,0,0,0,0]
             for c in sealions :
@@ -375,12 +388,218 @@ class SeaLionData(object):
             print(string, end=end)
         sys.stdout.flush()
 
+
+    def crop_sealion(self, img) :
+        """Finds the exact bounds for the sea lion in the chunk."""
+
+        MAX_DISTANCE = 20
+        MIN_AREA = 50
+        MIN_SIZE = 15
+
+        #img = np.asarray(Image.open(fn))
+        gray = skimage.color.rgb2gray(img)
+        blurred = ndi.gaussian_filter(gray,3)
+        edges = skimage.feature.canny(blurred,2)
+        dilated = skimage.morphology.dilation(edges)
+        fill = ndi.binary_fill_holes(dilated)
+        label_objects, nb_labels = ndi.label(fill)
+        
+        #if sum == 0, finished. no objects?
+        if label_objects.sum() <= 0 :
+            return None
+
+        # get center index
+        x, y = label_objects.shape
+        x //= 2
+        y //= 2
+        # Find the closest nonzero label to the center.
+        tmp = label_objects[x,y]
+        label_objects[x,y] = 0
+        r,c = np.nonzero(label_objects)
+        label_objects[x,y] = tmp
+        min_idx = ((r - x)**2 + (c - y)**2).argmin()
+        obj = label_objects[r[min_idx], c[min_idx]]
+        
+
+        label_objects[label_objects != obj] = 0
+        contours = skimage.measure.find_contours(label_objects,0.5)
+        
+        #Quality Control... cannot find chunk's sealion:
+        #Distance from center to Centroid?
+
+        p = Polygon(contours[0])
+        c = p.centroid.coords[0]
+        dist = np.abs(c[0] - x) + np.abs(c[1] - y) 
+
+        if dist > MAX_DISTANCE :
+            return None
+        if p.area < MIN_AREA :
+            return None
+
+        miny, minx, maxy, maxx = p.bounds
+        cimg = img[int(miny):int(maxy),int(minx):int(maxx),:]
+
+        if cimg.shape[0] < MIN_SIZE or cimg.shape[1] < MIN_SIZE :
+            return None
+
+        return cimg, c
+
+    def save_sea_lion_chunks_cropped(self, coords, chunksize=128):
+        self._progress('Saving image chunks...')
+        self._progress('\n', verbosity=VERBOSITY.VERBOSE)
+        
+        last_tid = -1
+        
+        for tid, cls, x, y in coords :
+            if tid != last_tid:
+                img = self.load_train_image(tid, border=chunksize//2, mask=True)
+                last_tid = tid
+
+            #skip negative examples.
+            if cls == 5 : 
+                fn = 'chunk_{tid}_{cls}_{x}_{y}_{size}_{size2}.png'.format(size=chunksize, size2=chunksize, tid=tid, cls=cls, x=x, y=y)
+                self._progress(' Saving '+fn, end='\n', verbosity=VERBOSITY.VERBOSE)
+                Image.fromarray( img[y:y+chunksize, x:x+chunksize, :]).save('.\\croppedchunks\\' + fn)
+                self._progress()
+                continue
+
+            chunk = img[y:y+chunksize, x:x+chunksize, :]
+            cropped = self.crop_sealion(chunk)
+            if cropped is None: 
+                fileinfo = 'id: {tid}_{cls}_{x}_{y}'.format(tid=tid, cls=cls, x=x, y=y)
+                self._progress(' ----Skipping '+fileinfo, end='\n', verbosity=VERBOSITY.VERBOSE)
+                continue
+
+            cimg, c = cropped
+            x = int(round(x + (c[1] - chunksize//2)))
+            y = int(round(y + (c[0] - chunksize//2)))
+
+            h, w, colors = cimg.shape
+
+            fn = 'chunk_{tid}_{cls}_{x}_{y}_{w}_{h}.png'.format(tid=tid, cls=cls, x=x, y=y, w=w, h=h)
+            self._progress(' Saving '+fn, end='\n', verbosity=VERBOSITY.VERBOSE)
+            Image.fromarray(cimg).save('.\\croppedchunks\\' + fn)
+            self._progress()
+        self._progress('done')
+
 # end SeaLionData
 
 
- #Count sea lion dots and compare to truth from train.csv
+##Count sea lion dots and compare to truth from train.csv
 sld = SeaLionData()
 sld.verbosity = VERBOSITY.VERBOSE
-for tid in sld.trainshort_ids:
-    coord = sld.coords(tid)
-    sld.save_sea_lion_chunks(coord, 92)
+#for tid in sld.trainshort_ids:
+#    coord = sld.coords(tid)
+#    sld.save_sea_lion_chunks_cropped(coord)
+    
+
+#for tid in sld.trainshort_ids:
+#    coord = sld.coords(tid)
+#    sld.save_sea_lion_chunks(coord, 92)
+
+
+
+#Make Cropped Sealions
+#Process:
+#input                              img = np.asarray(Image.open(fn))
+#Gray first?                        gray = skimage.color.rgb2gray(img)
+#Blur: Gaussian                     blurred = ndi.gaussian_filter(gray,3)
+#Canny Edge                         edges = skimage.feature.canny(blurred,2)
+#Dilate Edges (multiple times???)   dilated = skimage.morphology.dilation(edges)
+#Fill                               fill = ndi.binary_fill_holes(dilated)
+#Remove by coordinates?             label_objects, nb_labels = ndi.label(fill)
+
+#                                   x, y = label_objects.shape
+#                                   x //= 2
+#                                   y //= 2
+#                                   # Find the closest nonzero label to the center.
+#                                   tmp = label_objects[x,y]
+#                                   label_objects[x,y] = 0
+#                                   r,c = np.nonzero(label_objects)
+#                                   label_objects[x,y] = tmp
+#                                   min_idx = ((r - x)**2 + (c - y)**2).argmin()
+#                                   obj = label_objects[r[min_idx], c[min_idx]]
+
+#                                   label_objects[label_objects != obj] = 0
+#Find Contours                      contours = skimage.measure.find_contours(label_objects,0.5)
+#Get boundaries.
+
+
+
+#Find large background rectangles.
+#Process:
+
+#Make 
+#Mask out all sealion locations.
+
+
+def show(image) :
+    plt.imshow(obj)
+    plt.show()
+
+def show2(image1, image2) :
+    _, (ax1, ax2) = plt.subplots(ncols = 2)
+    ax1.imshow(image1)
+    ax2.imshow(image2)
+    plt.show()
+
+train_id = 1
+
+MIN_AREA = 9
+MAX_AREA = 100
+MAX_AVG_DIFF = 50
+MAX_COLOR_DIFF = 32
+src_img = np.asarray(sld.load_train_image(train_id, mask=True), dtype = np.float)
+dot_img = np.asarray(sld.load_dotted_image(train_id), dtype = np.float)
+
+img_diff = np.abs(src_img-dot_img)
+
+img_diff = np.max(img_diff, axis=-1)
+img_diff[img_diff<MIN_DIFFERENCE] = 0
+img_diff[img_diff>=MIN_DIFFERENCE] = 255
+less_noise = skimage.morphology.erosion(img_diff)
+contours = skimage.measure.find_contours(less_noise.astype(float), 0.5)
+
+positive_space = np.zeros(less_noise.shape)
+
+for cnt in contours :
+    p = Polygon(shell=cnt)
+    y, x = p.centroid.coords[0]
+    y = int(round(y))
+    x = int(round(x))
+    #print(x, y)
+    #blocksize = 128
+    blocksize = 128 // 2
+    centersize = 8
+    #positive_space[y : y + blocksize, x : x + blocksize] = 255
+    #positive_space[y : y + centersize, x : x + centersize] = 80
+    positive_space[y - blocksize : y + blocksize, x - blocksize : x + blocksize] = 255
+    positive_space[y : y + centersize, x : x + centersize] = 80
+
+#_, (ax1, ax2) = plt.subplots(ncols = 2)
+#ax1.imshow(less_noise)
+#ax2.imshow(positive_space)
+#plt.show()
+
+
+#has positive mask.
+
+
+dots_mask = dot_img.astype(np.uint16).sum(axis=-1)
+
+background_space = np.ones(positive_space.shape)
+background_space[positive_space > 20] = 0
+background_space[dots_mask<40] = 0
+                                                   #(3744, 5616)
+resize = scipy.misc.imresize(background_space, 1) #(37, 56)
+resize[resize < 255] = 0
+
+sq = skimage.morphology.square(3)
+run1 = skimage.morphology.erosion(resize,sq)
+run2 = skimage.morphology.erosion(run1)
+
+num_runs = 34
+
+for i in range(num_runs) :
+    #find largest rectangle.
+
