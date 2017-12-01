@@ -41,17 +41,23 @@ def input_test(DATA_URL):
 batch_size = 64
 num_classes = 6
 epochs = 100
-data_augmentation = False
+data_augmentation = True
 #num_predictions = 20
 save_dir = os.path.join(os.getcwd(), 'saved_models')
 print(save_dir)
 model_name = 'keras_sealions_trained_model.h5'
 #
-train_url = r'C:\Users\Ys\Source\Repos\Kaggle_Sealions_Harr_Features\SeaLionCoordinates\SeaLionCoordinates\chunks\92'
-test_url = r'C:\Users\Ys\Source\Repos\Kaggle_Sealions_Harr_Features\SeaLionCoordinates\SeaLionCoordinates\chunks\other92'
-x_train, y_train = input_train(train_url)
-x_test, y_test = input_test(test_url)
+#train_url = r'C:\Users\Ys\Source\Repos\Kaggle_Sealions_Harr_Features\SeaLionCoordinates\SeaLionCoordinates\chunks\92'
+#test_url = r'C:\Users\Ys\Source\Repos\Kaggle_Sealions_Harr_Features\SeaLionCoordinates\SeaLionCoordinates\chunks\other92'
+#x_train, y_train = input_train(train_url)
+#x_test, y_test = input_test(test_url)
 #
+chunk_path = r'C:\temp\sealion\chunks'
+chunks, classes = input_train(chunk_path)
+train_ratio = 0.7
+train_amount = int(round(len(chunks) * train_ratio))
+x_train, y_train = chunks[0:train_amount] , classes[0:train_amount]
+x_test, y_test = chunks[train_amount:-1] , classes[train_amount:-1]
 # The data, shuffled and split between train and test sets:
 #(x_train, y_train), (x_test, y_test) = cifar10.load_data()
 print('x_train shape:', x_train.shape)

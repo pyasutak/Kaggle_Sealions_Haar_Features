@@ -63,9 +63,9 @@ def package_versions():
     print('shapely       \t', shapely.__version__)
 
 
-SOURCEDIR = os.path.join('..', 'D:\\temp\\sealion')
+SOURCEDIR = os.path.join('..', 'C:\\temp\\sealion')
 
-DATADIR = os.path.join('..', 'D:\\temp\\sealion\\chunks')
+DATADIR = os.path.join('..', 'C:\\temp\\sealion\\chunks')
 
 VERBOSITY = namedtuple('VERBOSITY', ['QUITE', 'NORMAL', 'VERBOSE', 'DEBUG'])(0,1,2,3)
 
@@ -283,7 +283,7 @@ class SeaLionData(object):
         negatives = []
         for j in range(numycoords) :
             for i in range(numxcoords) : 
-				
+
                 xcoord = i * CHUNK_STEP
                 ycoord = j * CHUNK_STEP
                 overlap = False
@@ -305,7 +305,7 @@ class SeaLionData(object):
                 if neg_avg < MIN_AVG_DATA: continue
 
                 negatives.append( SeaLionCoord(train_id, 5, xcoord ,ycoord ) )
-		
+
         #add in only one result for each sea lion
         while len(negatives) > len(sealions):
             del negatives[random.randint(0,len(negatives) - 1)]
@@ -534,7 +534,7 @@ sld.verbosity = VERBOSITY.VERBOSE
 
 
 def show(image) :
-    plt.imshow(obj)
+    plt.imshow(image)
     plt.show()
 
 def show2(image1, image2) :
@@ -545,10 +545,12 @@ def show2(image1, image2) :
 
 train_id = 1
 
+MIN_DIFFERENCE = 16
 MIN_AREA = 9
 MAX_AREA = 100
 MAX_AVG_DIFF = 50
 MAX_COLOR_DIFF = 32
+img = np.asarray(sld.load_dotted_image(train_id))
 src_img = np.asarray(sld.load_train_image(train_id, mask=True), dtype = np.float)
 dot_img = np.asarray(sld.load_dotted_image(train_id), dtype = np.float)
 
@@ -598,8 +600,24 @@ sq = skimage.morphology.square(3)
 run1 = skimage.morphology.erosion(resize,sq)
 run2 = skimage.morphology.erosion(run1)
 
+show2(img, run1)
+
 num_runs = 34
 
 for i in range(num_runs) :
+    j, i  = run1.nonzero()
+    start = random.randint(0, len(i) - 1)
+    y, x = i[start], j[start]
     #find largest rectangle.
+    #process:
+    #get nonzero indexes. random one as starting point
+    #build largest possible rectangle from there.
+    #skip if too small?
+    #store bounds, area
+    #label bounds as selected.
+
+    #skip if rectangle too small.
+    #exit if num_runs, or if skipped too many times in a row?
+
+
 

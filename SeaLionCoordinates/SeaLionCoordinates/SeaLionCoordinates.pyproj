@@ -22,7 +22,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="SeaLionCoordinates.py" />
-    <Compile Include="Sealions_CNN.py">
+    <Compile Include="Sealion_CNN.py">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
