@@ -4,13 +4,16 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>7d91fd69-bbd3-4c4d-abae-3063a890ea4f</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>SeaLionCoordinates.py</StartupFile>
-    <SearchPath>
-    </SearchPath>
+    <StartupFile>Sealion_CNN.py</StartupFile>
+    <SearchPath>..\..\..\..\..\..\..\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\cudnn\bin;..\..\..\..\..\..\..\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\cudnn\include</SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>SeaLionCoordinates</Name>
     <RootNamespace>SeaLionCoordinates</RootNamespace>
+    <LaunchProvider>Standard Python launcher</LaunchProvider>
+    <EnableNativeCodeDebugging>False</EnableNativeCodeDebugging>
+    <Environment>
+    </Environment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>

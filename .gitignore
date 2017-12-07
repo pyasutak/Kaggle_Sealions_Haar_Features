@@ -265,3 +265,4 @@ __pycache__/
 ./chunks
 ./croppedchunks
 /SeaLionCoordinates/SeaLionCoordinates/croppedchunks
+/SeaLionCoordinates/SeaLionCoordinates/saved_models

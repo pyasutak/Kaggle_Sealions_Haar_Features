@@ -45,14 +45,14 @@ data_augmentation = True
 #num_predictions = 20
 save_dir = os.path.join(os.getcwd(), 'saved_models')
 print(save_dir)
-model_name = 'keras_sealions_trained_model.h5'
+model_name = 'keras_sealions_trained_less2_model.h5'
 #
 #train_url = r'C:\Users\Ys\Source\Repos\Kaggle_Sealions_Harr_Features\SeaLionCoordinates\SeaLionCoordinates\chunks\92'
 #test_url = r'C:\Users\Ys\Source\Repos\Kaggle_Sealions_Harr_Features\SeaLionCoordinates\SeaLionCoordinates\chunks\other92'
 #x_train, y_train = input_train(train_url)
 #x_test, y_test = input_test(test_url)
 #
-chunk_path = r'C:\temp\sealion\chunks'
+chunk_path = r'D:\temp\sealion\chunks_less'
 chunks, classes = input_train(chunk_path)
 train_ratio = 0.7
 train_amount = int(round(len(chunks) * train_ratio))
@@ -72,17 +72,19 @@ y_train = keras.utils.to_categorical(y_train, num_classes)
 y_test = keras.utils.to_categorical(y_test, num_classes)
 
 model = Sequential()
-model.add(Conv2D(32, (3, 3), padding='same',
+
+
+model.add(Conv2D(8, (3, 3), padding='same',
                  input_shape=x_train.shape[1:]))
 model.add(Activation('relu'))
-model.add(Conv2D(32, (3, 3)))
+model.add(Conv2D(8, (3, 3)))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Dropout(0.25))
 
-model.add(Conv2D(64, (3, 3), padding='same'))
+model.add(Conv2D(16, (3, 3), padding='same'))
 model.add(Activation('relu'))
-model.add(Conv2D(64, (3, 3)))
+model.add(Conv2D(16, (3, 3)))
 model.add(Activation('relu'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
 model.add(Dropout(0.25))
@@ -150,5 +152,32 @@ print('Saved trained model at %s ' % model_path)
 
 # Score trained model.
 scores = model.evaluate(x_test, y_test, verbose=1)
-print('Test loss:', scores[0])
+print('Test loss:', scores[0]) 
 print('Test accuracy:', scores[1])
+
+# Evaluate Root Mean Square Error (Kaggle evaluation metric)
+
+#model = keras.models.load_model(save_dir + '\\' + model_name)
+res = model.predict(x_test,batch_size)
+
+print('Predicted population:')
+pop = [0] * 6
+for r in res:
+    pop[np.argmax(r)] += 1
+pop
+['adult male', 'young male', 'adult female', 'juvenile','pup']
+
+print('Real Population:')
+real = [0] * 6
+for r in y_test:
+    real[np.argmax(r)] += 1
+real
+['adult male', 'young male', 'adult female', 'juvenile','pup']
+
+print('Root Mean Square Error (competition metric):')
+error = 0
+for i in range(len(pop)):
+    error += (real[i] - pop[i]) ** 2
+error = error / len(pop)
+error = error ** 0.5
+error
